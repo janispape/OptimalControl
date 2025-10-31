@@ -18,20 +18,24 @@ def f(t, x):
     return [v, alpha(t, q, v)]
 
 # Anfangszustand
-y0 = np.array([-15.0, -20.0])
-T = [0, 100]
+y0 = np.array([-15.0, 0.0])
+T = 100
+interval = [0, T]
+N = 1200
+t_grid = np.linspace(0, T, N)
 
 # Integration
 sol = solve_ivp(
-    f, T, y0,
+    f, interval, y0,
     method='Radau',
     rtol=1e-6, atol=1e-8,
-    max_step=0.1,
+    max_step=0.1, t_eval=t_grid,
     dense_output=False
 )
 
 # Alpha für die ausgegebenen Zeitpunkte auswerten
 alpha_eval = [alpha(t, q, v) for t, q, v in zip(sol.t, sol.y[0], sol.y[1])]
+print(sol.t.shape, sol.y[0].shape, sol.y[1].shape)
 
 # Plot
 plt.figure(figsize=(10,6))
