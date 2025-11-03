@@ -15,4 +15,4 @@ The repository includes numerical and analytical examples based on the theory pr
 - **Bee Population** – A biological control model maximizing queen production using Pontryagin’s principle.
 Each example provides a clear numerical illustration of key optimal control concepts.
 
-A more detailed description on the general problem can be found [here](https://janispape.github.io/OptimalControl/)
+A more detailed description on the general problem can be found [here](https://janispape.github.io/OptimalControl/).
