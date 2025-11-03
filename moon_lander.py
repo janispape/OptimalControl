@@ -10,7 +10,7 @@ g0 = 9.81 # earth gravity
 Isp = 500.0 # specific impulse
 k = 1.0 / (g0*Isp)
 m_dry = 2000.0 # mass of the empty spacecraft
-T_max = 6000.0 # maximal thrust
+T_max = 8000.0 # maximal thrust
 
 # grid on normalised time tau ∈ [0,1]
 N = 100 # nodes size
@@ -137,7 +137,7 @@ h, v, m, u, Tf = unpack(res.x)
 t = Tf * tau
 
 
-# ------------------------------------ plots ------------------------------------
+# ------------------------- all relevant values plotted -------------------------
 fig, axs = plt.subplots(4, 1, figsize=(8, 10), sharex=True)
 
 axs[0].plot(t, h, label="Height (m)")
@@ -164,5 +164,43 @@ fig.subplots_adjust(top=0.90)  # make room for suptitle
 fig.suptitle("Optimal Lunar Landing Trajectory", fontsize=14, fontweight='bold', y=0.98)
 fig.text(0.5, 0.94, f"(optimal duration: T={t[-1]:.2f}s, "
                     f"final fuel: {fuel_filling * 100:.2f}%)", ha='center', fontsize=10, style='italic')
+
+plt.show()
+
+
+# --------------------------------- phase space ---------------------------------
+plt.figure(figsize=(8, 6))
+
+# Main trajectory line
+plt.plot(v, h, color='tab:blue', linewidth=2, label='Phase Space Trajectory')
+
+# Highlight start and end points
+plt.scatter(v[0], h[0], color='tab:green', s=80, zorder=3, label='Start')
+plt.scatter(v[-1], h[-1], color='tab:red', s=80, zorder=3, label='Landing')
+
+# Labels and title (consistent with first figure)
+plt.title("Phase Space: Velocity vs. Height", fontsize=14, fontweight='bold', pad=10)
+plt.xlabel("Velocity (m/s)", fontsize=12)
+plt.ylabel("Height (m)", fontsize=12)
+
+# Grid and layout
+plt.grid(True, linestyle='--', linewidth=0.8, alpha=0.6)
+plt.legend(frameon=True, loc='best', fontsize=10)
+plt.tight_layout()
+
+# Annotations for start and landing
+plt.annotate("Start",
+             xy=(v[0], h[0]), xytext=(v[0] + (max(v) - min(v)) * 0.05, h[0] + (max(h) - min(h)) * 0.05),
+             arrowprops=dict(arrowstyle="->", color='tab:green', lw=1.2),
+             fontsize=10, color='tab:green')
+
+plt.annotate("Landing",
+             xy=(v[-1], h[-1]), xytext=(v[-1] - (max(v) - min(v)) * 0.1, h[-1] + (max(h) - min(h)) * 0.05),
+             arrowprops=dict(arrowstyle="->", color='tab:red', lw=1.2),
+             fontsize=10, color='tab:red')
+
+# Optional: small caption below the plot
+plt.figtext(0.5, 0.02, "Optimal trajectory in phase space (Velocity vs. Height)",
+            ha='center', fontsize=9, style='italic')
 
 plt.show()
