@@ -5,7 +5,11 @@ Optimal control describes the following problem: For a function
 $f: \mathbb{R}^n \times \mathbb{R}^m \rightarrow \mathbb{R}^n$ and some 
 called _control_ $\alpha:[0,\infty) \rightarrow \mathbb{R}^m$ we consider
 an ODE:
-$$\cases{\dot{x}(t) = f(x(t),\alpha(t))\\x(0) = x_0}$$
+$$\begin{cases}
+\dot{x}(t) = f(x(t),\alpha(t)), \\
+x(0) = x_0
+\end{cases}
+$$
 We want to find a control $\alpha$ in some set $\mathcal{A} \subset
 \{\alpha:[0,\infty) \rightarrow \mathbb{R}^m | \ \alpha \text{ is measurable}
 \}$ (often, $\mathcal{A}$ is just a restriction of the images of the $\alpha$),
@@ -39,7 +43,7 @@ given in the script by Evans on p.10. It is implemented in ```rocket_car.py```.
 
 <img src="images/moon_lander_img.png" width="120">
 
-In this example the height and velocity of a spacecraft close to the moon is given. Intuitively it is clear,
+In this example the height and velocity of a spacecraft close to the moon is given. Intuitively it is clear
 that we have to fire the rockets at the bottom of the carrier at some point to guarantee a smooth landing.
 We also want to minimise fuel use and the use of fuel affects the ODE governing our rocket (as the mass of it
 decreases). The details of the problem are given in Evans script on p.55. We use a discretisation approach
