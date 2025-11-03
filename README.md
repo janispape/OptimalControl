@@ -2,11 +2,11 @@
 
 This repository contains files, that implements optimal control problems.
 Optimal control describes the following problem: For a function 
-$f: \mathbb{R}^n \times \mathbb{R}^m \rightarrow \mathbb{R}^n$ and some 
-called _control_ $\alpha:[0,\infty) \rightarrow \mathbb{R}^m$ we consider
-an ODE:
-$$\begin{cases}
-\dot{x}(t) = f(x(t),\alpha(t)), \\
+$f: \mathbb{R}^n \times \mathbb{R}^m \rightarrow \mathbb{R}^n$ and some function $\alpha:[0,\infty) 
+\rightarrow \mathbb{R}^m$ called _control_  we consider an ODE:
+$$
+\begin{cases}
+\dot{x}(t) = f(x(t), \alpha(t)), \\
 x(0) = x_0
 \end{cases}
 $$
