@@ -36,7 +36,7 @@ $$P[\alpha] = \int_0^T r(x_\alpha(t), \alpha(t)) dt + g(x(T))$$
 This example is analytically solvable, but it's a good starting point to get an intuition for the situation,
 especially if we have $\mathcal{A} = \{\alpha:(0, \infty) \rightarrow [-1,1] | \ \alpha \text{ is measurable} \}$.
 In these cases the optimal solutions are so called _bang bang controls_, i.e. we have $\text{im}(\alpha_{\text{
-opt}}) \subset \{-1,0,1\}$ (which often is correspondent to putting some switch on to the fullest).
+opt}}) \subset \\{-1,0,1\\}$ (which often is correspondent to putting some switch on to the fullest).
 
 In the example we have given a car on the real number line with a starting point and a starting velocity and
 two rockets attached on both ends of the car. Both these rockets can be turned on and we can control the car
