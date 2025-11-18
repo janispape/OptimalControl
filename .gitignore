@@ -28,4 +28,4 @@ dist/
 *.egg-info/
 
 # output files
-.mp4
+*.mp4
