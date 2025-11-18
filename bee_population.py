@@ -1,26 +1,23 @@
 import numpy as np
-from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 
-# death rate of the workers (mu) and the queens (nu
-mu, nu = 1, 2
+# death and work rates respectively
+death_workers = 1.0
+death_queens = 2.0
+birth_workers = 2.0
+birth_queens = 1.0
 
-# birth rate of the workers (b) and the queens (c)
-b, c = 2, 1
+mu = death_workers
+nu = death_queens
+b = birth_workers
+c = birth_queens
 
-def f(x, alpha):
-    w, q = x
-    return [-mu * w + b * alpha * w, - nu * q + c * (1-alpha) * w]
+# time horizon
+T = 365
 
-def g(x,alpha):
-    return alpha
-
-# the function \mathcal{H} on pg. 6 of the Gruene article
-def hamiltonian(x, p ,alpha):
-    return g(x,alpha) + p * f(x, alpha)
-
-# the right side of the PDE governing the costate p
-def hamiltonian_derivative(x, p ,alpha):
-    h, v, m = x
-    p1, p2, p3 = p
-    return [0, p1, - p1 * alpha / m*m]
+# productivity function - this gives us the productivity of the workers in producing economic output
+# which then can be used to produce and maintain offspring.
+# If we have a time-step being equal to a day, it might be sensible to choose s(t) = 1 + cos((2*x - 365)*pi/365).
+# This way we model the times of the year with the summer being the most fruitful.
+def prod(t):
+    return 1 + np.cos((2 * t - 365) * np.pi / 365)
