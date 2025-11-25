@@ -1,85 +1,172 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
+
+# -----------------------------
+# Problem data
+# -----------------------------
 
 # cost of ordering (gamma) and storing (beta) one unit of goods:
-gamma, beta  = 3, 1
+gamma, beta  = 2.0, 3.0
 
 # customer demand function:
 def demand(t):
-    return 15 + np.sin(2 * np.pi * t / 10) * 5
+    return 15.0 + np.sin(2.0 * np.pi * t / 10.0) * 5.0
+
+# time horizon:
+T = 100.0
+
+# maximal ordering rate (upper bound on control)
+max_ord = 50.0   # must be >= max_t demand(t)
+
+
+# -----------------------------
+# Discretisation
+# -----------------------------
+
+num_x = 400      # number of spatial intervals
+num_t = 6000     # number of time steps
+
+x_max = 1000.0
+dx = x_max / num_x
+dt = T / num_t
+
+x_grid = np.linspace(0.0, x_max, num_x + 1)
+t_grid = np.linspace(0.0, T, num_t + 1)
 
 # time horizon:
 T = 100
 I = [0, T]
 
-# Hamiltonian of the problem
-def hamiltonian(t, x, p):
-    return - beta * x + p * demand(t) - (gamma + p) * max_ord * (gamma + p < 0)
+# -----------------------------
+# Hamiltonian (interior, no state constraint)
+# -----------------------------
+def hamiltonian_interior(t, x, p):
+    """
+    H(t,x,p) for interior points x > 0:
+    minimize over u in [0, max_ord]:
+        gamma u + beta x + p (u - d(t))
+    = beta x - p d(t) + min_{u} (gamma + p) u
+    """
+    d = demand(t)
+    return beta * x - p * d + np.minimum(0.0, (gamma + p) * max_ord)
 
-# maximal ordering rate (usually \infty, but to compute the hamiltonian, we have to bound it)
-max_ord = 100
+# -----------------------------
+# HJB solve backward in time
+# -----------------------------
 
-# Grid
-I = 400
-N = 6000
+# V[n, i] ~ V(t_n, x_i)
+V = np.zeros((num_t + 1, num_x + 1))
 
-x_max = 1000
-dx = x_max / I
-dt = T / N
+# Terminal condition: pure running cost ⇒ V(T, x) = 0
+V_curr = np.zeros_like(x_grid)
+V[-1, :] = V_curr.copy()
 
-x = np.linspace(0, x_max, I+1)
+# Backward time stepping (explicit Euler in time)
+for n in range(num_t, 0, -1):
+    t = t_grid[n]
 
-# Storage with terminal condition V(T,x) = \beta * x * dt saved in V_curr
-V = np.zeros((N+1, I+1))
-V_curr = beta * x
-V_next = np.zeros((I+1))
+    # compute V_x at current time layer using one-sided derivative at x=0
+    Vx = np.empty_like(V_curr)
+    Vx[0] = (V_curr[1] - V_curr[0]) / dx          # forward diff at boundary
+    Vx[1:] = (V_curr[1:] - V_curr[:-1]) / dx      # backward diff elsewhere
 
-# initial column t = T for whole function V
-V[-1,:] = V_curr
-Vx = np.zeros((I+1))
+    # interior Hamiltonian
+    H = hamiltonian_interior(t, x_grid, Vx)
 
-# time-stepping backwards:
-for n in range(N, 0, -1):
+    # boundary cell x = 0: enforce state constraint (u >= d(t))
+    p0 = Vx[0]
+    d0 = demand(t)
 
-    t = n * dt
+    # feasible set at x=0: u ∈ [d0, max_ord]
+    # minimize (gamma + p0) u - p0 d0
+    if gamma + p0 >= 0.0:
+        # minimizer u = d0
+        H[0] = gamma * d0  # because (gamma+p0)*d0 - p0*d0 = gamma*d0
+    else:
+        # minimizer u = max_ord
+        H[0] = (gamma + p0) * max_ord - p0 * d0
 
-    # 1. compute V_x from current time layer V_curr, using backward difference
-    Vx = np.zeros_like(V_curr)
-    Vx[1:] = (V_curr[1:] - V_curr[:-1]) / dx
-    Vx[0] = Vx[1]   # simple boundary (you can improve if needed)
-
-    # 2. compute H(t, x, Vx)
-    H = hamiltonian(t, x, Vx)
-
-    # 3. update backwards in time
+    # explicit Euler step backward in time:
     V_prev = V_curr + dt * H
 
-    # 4. store if desired
-    V[n-1,:] = V_prev
-
-    # update current layer
+    # store and update
+    V[n - 1, :] = V_prev
     V_curr = V_prev
 
+# -----------------------------
+# Compute V_x on whole grid (for feedback law)
+# -----------------------------
+Vx_all = np.empty_like(V)
+# one-sided derivative in x-direction for each time slice
+Vx_all[:, 0] = (V[:, 1] - V[:, 0]) / dx
+Vx_all[:, 1:] = (V[:, 1:] - V[:, :-1]) / dx
 
-fig, ax = plt.subplots(figsize=(10, 6))
+# -----------------------------
+# Feedback control law u*(t,x)
+# -----------------------------
+# interior control (ignoring state constraint): bang-bang
+u_star = np.where(gamma + Vx_all < 0.0, max_ord, 0.0)
 
-x = np.arange(V.shape[1])
+# enforce boundary state constraint at x = 0: u >= demand(t)
+# (vectorized over time)
+u_star[:, 0] = np.maximum(u_star[:, 0], demand(t_grid))
 
-y_min = np.min(V)
-y_max = np.max(V)
-padding = 0.1 * (y_max - y_min)
-ax.set_ylim(y_min - padding, y_max + padding)
+# -----------------------------
+# Forward simulation with feedback
+# -----------------------------
 
-# create an empty line object
-(line,) = ax.plot(x, V[0, :], lw=2)
+x0 = 400.0  # initial inventory
+x_traj = np.zeros(num_t + 1)
+u_traj = np.zeros(num_t + 1)
 
-def update(frame):
-    line.set_ydata(V[frame, :])
-    return (line,)
+x_traj[0] = x0
 
-anim = animation.FuncAnimation(
-    fig, update, frames=range(0, V.shape[0], 10), interval=50, blit=True
-)
+for n in range(num_t):
+    t = t_grid[n]
+    xn = x_traj[n]
 
-anim.save("solution.mp4", fps=30, dpi=150)
+    # clamp state to grid for safety
+    if xn <= 0.0:
+        xn = 0.0
+    if xn >= x_max:
+        xn = x_max - 1e-8
+
+    # find neighboring grid indices in x and interpolate control
+    j = xn / dx
+    j0 = int(np.floor(j))
+    j1 = min(j0 + 1, num_x)
+    theta = j - j0
+
+    # linear interpolation in space:
+    u_n = (1.0 - theta) * u_star[n, j0] + theta * u_star[n, j1]
+    u_traj[n] = u_n
+
+    # system dynamics: ẋ = u − demand(t)
+    x_next = x_traj[n] + dt * (u_n - demand(t))
+
+    # small numerical projection to enforce x >= 0
+    x_traj[n + 1] = max(0.0, x_next)
+
+# last control value (for plotting convenience)
+u_traj[-1] = u_traj[-2]
+
+# -----------------------------
+# Plot results
+# -----------------------------
+
+plt.figure(figsize=(10, 4))
+
+plt.subplot(1, 2, 1)
+plt.plot(t_grid, x_traj)
+plt.xlabel("Time t")
+plt.ylabel("Inventory x(t)")
+plt.title("Optimal state trajectory")
+
+plt.subplot(1, 2, 2)
+plt.plot(t_grid, u_traj)
+plt.xlabel("Time t")
+plt.ylabel("Order rate u(t)")
+plt.title("Applied optimal control")
+
+plt.tight_layout()
+plt.show()
